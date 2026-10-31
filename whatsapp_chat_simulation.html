@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raghad & You - WhatsApp Chat</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap');
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #dadada;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* Custom WhatsApp Pink Doodle Background similar to screenshot */
+        .wa-background {
+            background-color: #fce4ec;
+            background-image: 
+                radial-gradient(#f8bbd0 1px, transparent 1px),
+                radial-gradient(#f8bbd0 1px, #fce4ec 1px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            position: relative;
+        }
+        /* Subtle overlay pattern */
+        .wa-background::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.05"><text x="10" y="50" font-size="20">💬</text><text x="60" y="80" font-size="20">❤️</text></svg>');
+            pointer-events: none;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.2);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-[#00a884] text-white px-4 py-2.5 flex items-center justify-between shadow-md z-10">
+        <!-- Right side: Contact Info -->
+        <div class="flex items-center space-x-3 space-x-reverse cursor-pointer">
+            <div class="relative">
+                <img id="avatarImg" src="https://placehold.co/100x100/e91e63/ffffff?text=R" alt="Raghad.A" class="w-10 h-10 rounded-full object-cover border border-white/20">
+                <span class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#00a884] rounded-full"></span>
+            </div>
+            <div>
+                <h1 class="font-bold text-base leading-tight">𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍</h1>
+                <p class="text-xs text-emerald-100 font-light">انقر هنا للاطلاع على معلومات جهة الاتصال</p>
+            </div>
+        </div>
+
+        <!-- Left side: Icons (Video, Phone, Search, Menu) -->
+        <div class="flex items-center space-x-5 space-x-reverse text-[#aebac1] md:text-white text-lg">
+            <button class="hover:text-white transition" title="فيديو"><i class="fa-solid fa-video"></i></button>
+            <button class="hover:text-white transition" title="اتصال"><i class="fa-solid fa-phone"></i></button>
+            <span class="border-l border-white/20 h-5 mx-1"></span>
+            <button class="hover:text-white transition" title="بحث"><i class="fa-solid fa-magnifying-glass"></i></button>
+            <button class="hover:text-white transition" title="القائمة"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+        </div>
+    </header>
+
+    <!-- Encryption Notice Banner -->
+    <div class="bg-[#ffeeba] text-[#856404] text-center text-xs py-2 px-4 shadow-inner z-10 flex items-center justify-center space-x-1 space-x-reverse">
+        <i class="fa-solid fa-lock text-[10px] ml-1"></i>
+        <span>الرسائل والمكالمات مشفرة تمامًا بين الطرفين، بحيث لا يستطيع أحد خارج هذه الدردشة، ولا حتى شركة واتساب نفسها، قراءتها أو الاستماع إليها.</span>
+    </div>
+
+    <!-- Chat Area with Pink Background -->
+    <main id="chatContainer" class="flex-1 wa-background overflow-y-auto px-4 sm:px-12 py-4 flex flex-col space-y-2">
+        <!-- Messages will be injected here dynamically -->
+    </main>
+
+    <!-- Bottom Input Bar -->
+    <footer class="bg-[#f0f2f5] px-4 py-3 flex items-center space-x-3 space-x-reverse border-t border-gray-300 z-10">
+        <!-- Action Buttons -->
+        <div class="flex items-center space-x-4 space-x-reverse text-gray-500 text-xl">
+            <button class="hover:text-gray-700 transition" title="إيموجي"><i class="fa-regular fa-face-smile"></i></button>
+            <button class="hover:text-gray-700 transition" title="إرفاق"><i class="fa-solid fa-paperclip"></i></button>
+        </div>
+
+        <!-- Input Box -->
+        <div class="flex-1 bg-white rounded-lg flex items-center px-4 py-2 shadow-sm">
+            <input type="text" id="messageInput" placeholder="اكتب رسالة" class="w-full bg-transparent outline-none text-gray-700 text-sm placeholder-gray-400" autocomplete="off">
+        </div>
+
+        <!-- Send / Mic Button -->
+        <button id="sendBtn" class="text-gray-500 hover:text-gray-700 text-xl transition p-2">
+            <i id="sendIcon" class="fa-solid fa-microphone"></i>
+        </button>
+    </footer>
+
+    <!-- JavaScript Parser and Chat Logic -->
+    <script>
+        // Raw Chat Log from chat.txt
+        const rawChatData = `الرسائل والمكالمات مشفرة تمامًا بين الطرفين، بحيث لا يستطيع أحد خارج هذه الدردشة، ولا حتى شركة واتساب نفسها، قراءتها أو الاستماع إليها.
+[8/25/26, 5:33:20 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: شعور مش حلو خالص
+[8/25/26, 5:33:22 PM] أنت: يلا يحبي راح ابوي بزعق
+[8/25/26, 5:33:28 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: تمام
+[8/25/26, 5:33:29 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: روح روح
+[8/25/26, 5:33:31 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: بحبك
+[8/25/26, 5:33:34 PM] أنت: شاركي عالقروب
+[8/25/26, 5:33:39 PM] أنت: عيني بتلمع
+[8/25/26, 5:33:41 PM] أنت: بس اشوف اسمك
+[8/25/26, 5:33:42 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: تعبانة والله مش قادرة
+[8/25/26, 5:33:46 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: ليش
+[8/25/26, 5:33:46 PM] أنت: بعشقك
+[8/25/26, 5:33:52 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: بس تيجي بنحكي مع بعض
+[8/25/26, 5:33:55 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: المساء
+[8/25/26, 5:33:59 PM] أنت: ان شاء الله يعمري
+[8/25/26, 5:34:04 PM] أنت: بحبك قمت
+[8/25/26, 5:34:07 PM] أنت: بزعقو
+[8/25/26, 5:34:08 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: على الجروب بدي نحكي مع بعض
+[8/25/26, 5:34:13 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: مع بعض بنحكي ومع بعض بنسكر
+[8/25/26, 5:34:16 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: تمام روح روح
+[8/25/26, 5:34:17 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: بحيك
+[8/25/26, 5:34:18 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: بحبك
+[8/25/26, 5:34:20 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: خلص روح سلاك
+[8/25/26, 5:34:21 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: م
+[8/25/26, 5:34:40 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: طلعت مشارك 😂
+[8/25/26, 5:35:23 PM] أنت: رايح
+[8/25/26, 5:35:24 PM] أنت: سلام
+[8/25/26, 5:35:26 PM] أنت: بحبك
+[8/25/26, 5:36:06 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: بموت فيك
+[8/25/26, 5:36:07 PM] 𝓡𝓪𝓰𝓱𝓪𝓭.𝓐 🤍: سلام
+[8/25/26, 6:12:17 PM] أنت: حبي
+[10/30/26, 1:04:27 PM] أنت: .`;
+
+        // Function to parse timestamp and format time in Arabic 12-hour format (e.g. 5:33 م)
+        function formatWhatsAppTime(dateObj) {
+            let hours = dateObj.getHours();
+            const minutes = dateObj.getMinutes();
+            const ampm = hours >= 12 ? 'م' : 'ص';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            const minutesFormatted = minutes < 10 ? '0' + minutes : minutes;
+            return `${hours}:${minutesFormatted} ${ampm}`;
+        }
+
+        // Function to format date divider
+        function formatDateHeader(dateObj) {
+            const today = new Date();
+            if (dateObj.toDateString() === today.toDateString()) {
+                return 'اليوم';
+            }
+            return dateObj.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        // Parse raw chat lines
+        function parseMessages() {
+            const lines = rawChatData.split('\n');
+            const messages = [];
+            const regex = /^\[(.*?)\] (.*?): ([\s\S]*)$/;
+
+            lines.forEach(line => {
+                const match = line.match(regex);
+                if (match) {
+                    const dateStr = match[1];
+                    const sender = match[2].trim();
+                    const text = match[3].trim();
+                    const timestamp = new Date(dateStr);
+
+                    messages.push({
+                        sender: sender,
+                        text: text,
+                        timestamp: timestamp,
+                        timeFormatted: formatWhatsAppTime(timestamp)
+                    });
+                }
+            });
+
+            // Sort chronologically by timestamp
+            messages.sort((a, b) => a.timestamp - b.timestamp);
+            return messages;
+        }
+
+        const messagesList = parseMessages();
+        const chatContainer = document.getElementById('chatContainer');
+
+        // Render messages to DOM
+        function renderChat() {
+            chatContainer.innerHTML = '';
+            let lastDateStr = '';
+
+            messagesList.forEach((msg) => {
+                const dateKey = msg.timestamp.toDateString();
+                
+                // Add date header if date changes
+                if (dateKey !== lastDateStr) {
+                    lastDateStr = dateKey;
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'flex justify-center my-3';
+                    dateDiv.innerHTML = `<span class="bg-[#e1f3fb] text-[#54656f] text-xs px-3 py-1.5 rounded-lg shadow-sm font-medium">${formatDateHeader(msg.timestamp)}</span>`;
+                    chatContainer.appendChild(dateDiv);
+                }
+
+                const isUser = msg.sender === 'أنت';
+                const messageRow = document.createElement('div');
+                messageRow.className = `flex ${isUser ? 'justify-end' : 'justify-start'} mb-1`;
+
+                const bubble = document.createElement('div');
+                bubble.className = `relative max-w-[80%] sm:max-w-[65%] px-3 py-1.5 rounded-lg text-sm shadow-sm leading-relaxed ${
+                    isUser ? 'bg-[#d9fdd3] text-[#111b21] rounded-tl-lg' : 'bg-white text-[#111b21] rounded-tr-lg'
+                }`;
+
+                // Message Text & Meta Info (Time + Checkmarks)
+                const textSpan = document.createElement('span');
+                textSpan.className = 'block pl-14 whitespace-pre-wrap break-words';
+                textSpan.textContent = msg.text;
+
+                const metaDiv = document.createElement('span');
+                metaDiv.className = 'absolute bottom-1 left-2 flex items-center space-x-0.5 space-x-reverse text-[10px] text-[#667781] select-none';
+                
+                let checkmarksHTML = '';
+                if (isUser) {
+                    checkmarksHTML = `<span class="text-[#53bdeb] font-bold text-xs mr-0.5">✓✓</span>`;
+                }
+                metaDiv.innerHTML = `<span>${msg.timeFormatted}</span>${checkmarksHTML}`;
+
+                bubble.appendChild(textSpan);
+                bubble.appendChild(metaDiv);
+                messageRow.appendChild(bubble);
+                chatContainer.appendChild(messageRow);
+            });
+
+            // Scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Initial render
+        renderChat();
+
+        // Interactive Input Handling for sending new messages
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const sendIcon = document.getElementById('sendIcon');
+
+        messageInput.addEventListener('input', (e) => {
+            if (e.target.value.trim().length > 0) {
+                sendIcon.className = 'fa-solid fa-paper-plane text-[#00a884]';
+            } else {
+                sendIcon.className = 'fa-solid fa-microphone';
+            }
+        });
+
+        function handleSendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+
+            const now = new Date();
+            messagesList.push({
+                sender: 'أنت',
+                text: text,
+                timestamp: now,
+                timeFormatted: formatWhatsAppTime(now)
+            });
+
+            messageInput.value = '';
+            sendIcon.className = 'fa-solid fa-microphone';
+            renderChat();
+        }
+
+        sendBtn.addEventListener('click', handleSendMessage);
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                handleSendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
